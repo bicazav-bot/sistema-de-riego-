@@ -121,7 +121,7 @@ header {
 .gauge-bar {
     width: 200px; height: 100px; border-radius: 100px 100px 0 0;
     background: linear-gradient(90deg, var(--danger) 0%, var(--warning) 50%, var(--primary) 100%);
-    position: absolute; transform-origin: bottom center; transform: rotate(-90deg); transition: transform 0.5s ease;
+    position: absolute; transform-origin: bottom center; transform: rotate(-180deg); transition: transform 0.5s ease;
 }
 .gauge-center {
     width: 136px; height: 68px; border-radius: 68px 68px 0 0; background: var(--bg-card);
@@ -160,6 +160,28 @@ button:hover { opacity: 0.9; }
 .cal-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; }
 .cal-item input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); }
 .btn-save { background: var(--primary); width: 100%; margin-top: 4px; }
+
+.status-calib {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 6px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: none;
+}
+.status-calib.enviando {
+    background: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fde68a;
+    display: block;
+}
+.status-calib.actualizado {
+    background: #ecfdf5;
+    color: var(--primary);
+    border: 1px solid #a7f3d0;
+    display: block;
+}
 
 .chart-box { position: relative; height: 180px; width: 100%; }
 .log-box {
