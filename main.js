@@ -10,7 +10,7 @@ function cerrarModalQRDirecto() { document.getElementById("qrModal").style.displ
 function cerrarModalQR(event) { if (event.target.id === "qrModal") document.getElementById("qrModal").style.display = "none"; }
 
 const brokerHost = "broker.hivemq.com";
-const brokerPort = 8000;
+const brokerPort = 8884; // Puerto seguro WSS obligatorio para la web
 const brokerPath = "/mqtt";
 const clientId   = "AgroClientWeb-" + Math.random().toString(16).substring(2, 8);
 
@@ -134,12 +134,12 @@ client.onMessageArrived = (msg) => {
 
 function conectar() {
     client.connect({
-        useSSL: false,
+        useSSL: true, // Obligatorio para puerto 8884 en navegadores modernos (HTTPS)
         onSuccess: () => {
             client.subscribe(topicSoil);
             client.subscribe(topicPump);
             client.subscribe(topicStatus);
-            log("Conectado al broker MQTT.");
+            log("Conectado de forma segura al broker MQTT.");
         },
         onFailure: (err) => { 
             setConexion(false); 
