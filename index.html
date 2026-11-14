@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroIoT Pro | Estacion de Riego</title>
+    <title>AgroIoT Pro | Control Manual y Calibración</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="estilo.css">
@@ -12,11 +12,9 @@
 
 <div class="container">
     <header>
-        <div class="header-left">
-            <div class="brand">
-                <h1>AgroIoT Riego Pro</h1>
-                <p>Monitoreo Agronomico y Actuador ESP32</p>
-            </div>
+        <div class="brand">
+            <h1>AgroIoT Monitoreo</h1>
+            <p>Control Manual y Calibración ESP32</p>
         </div>
         <div class="header-right">
             <button class="btn-qr" onclick="abrirModalQR()">Ver QR</button>
@@ -29,19 +27,18 @@
 
     <div id="qrModal" class="modal-overlay" onclick="cerrarModalQR(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
-            <h3>Codigo QR de la Web</h3>
-            <p>Escanea este codigo con tu celular para abrir el panel:</p>
-            <div id="qrContainer">
-                <img id="qrImage" src="" alt="Codigo QR de la pagina">
-            </div>
-            <p id="urlActual" style="font-weight: 600; color: var(--text-main); margin-top: 5px;"></p>
+            <h3>Código QR de la Web</h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Escanea este código:</p>
+            <div id="qrContainer"><img id="qrImage" src="" alt="Código QR"></div>
+            <p id="urlActual" style="font-size: 0.7rem; font-weight: 600; word-break: break-all; margin: 5px 0;"></p>
             <button class="btn-close-modal" onclick="cerrarModalQRDirecto()">Cerrar</button>
         </div>
     </div>
 
     <main class="grid">
+        <!-- SECCIÓN 1: HUMEDAD -->
         <section class="card col-gauge">
-            <div class="card-title">Humedad del Suelo</div>
+            <div class="card-title">Humedad Actual</div>
             <div class="gauge-wrapper">
                 <div class="gauge-track"></div>
                 <div id="gaugeBar" class="gauge-bar"></div>
@@ -51,66 +48,44 @@
                 </div>
             </div>
             <div class="sensor-metrics">
-                <div class="sensor-stat">
-                    <small>Estado del Suelo</small>
-                    <strong id="estadoSueloTxt">Analizando...</strong>
-                </div>
-                <div class="sensor-stat">
-                    <small>Respuesta Sonda</small>
-                    <strong id="conductividadTxt">Normal</strong>
-                </div>
+                <div class="sensor-stat"><small>Estado del Suelo</small><strong id="estadoSueloTxt">Analizando...</strong></div>
+                <div class="sensor-stat"><small>Sonda FC-28</small><strong>Activa</strong></div>
             </div>
         </section>
 
+        <!-- SECCIÓN 2: ESTADO Y CONTROL MANUAL -->
         <section class="card col-pump">
-            <div class="card-title">Actuador Hidraulico</div>
-            <div id="pumpBox" class="pump-box">
-                <div id="pumpStateText" class="pump-title">BOMBA INACTIVA</div>
+            <div class="card-title">Estado del Actuador (Relé)</div>
+            <div id="pumpBox" class="pump-box inactive">
+                <div id="pumpStateText" class="pump-title">APAGADO</div>
             </div>
-            <div class="btn-grid">
-                <button class="btn-on" onclick="enviarComando('ON')">ENCENDER</button>
-                <button class="btn-off" onclick="enviarComando('OFF')">APAGAR</button>
-                <button class="btn-auto" onclick="enviarComando('AUTO')">MODO AUTOMATICO</button>
+            <div class="manual-controls">
+                <button class="btn-manual btn-on" onclick="enviarModo('MANUAL_ON')">FORZAR ENCENDIDO</button>
+                <button class="btn-manual btn-off" onclick="enviarModo('MANUAL_OFF')">FORZAR APAGADO</button>
+                <button class="btn-manual btn-auto" onclick="enviarModo('AUTO')">MODO AUTOMÁTICO</button>
             </div>
         </section>
 
-        <section class="card col-soil">
-            <div class="card-title">Calibracion de Umbrales</div>
+        <!-- SECCIÓN 3: CALIBRADOR OPTIMIZADO -->
+        <section class="card col-calib">
+            <div class="card-title">Calibrador de Umbral</div>
             <div id="statusCalibracion" class="status-calib"></div>
             <div class="calibration-group">
                 <div class="cal-item">
                     <div class="cal-header">
-                        <span>Encender Bomba (Seco):</span>
-                        <strong id="valUmbralOn" style="color:var(--danger)">30%</strong>
-                    </div>
-                    <input type="range" id="rangeOn" min="10" max="60" value="30" oninput="document.getElementById('valUmbralOn').textContent = this.value + '%'">
-                </div>
-
-                <div class="cal-item">
-                    <div class="cal-header">
-                        <span>Apagar Bomba (Humedo):</span>
+                        <span>Activar riego si es menor a:</span>
                         <strong id="valUmbralOff" style="color:var(--primary)">50%</strong>
                     </div>
-                    <input type="range" id="rangeOff" min="40" max="90" value="50" oninput="document.getElementById('valUmbralOff').textContent = this.value + '%'">
+                    <input type="range" id="rangeOff" min="10" max="95" value="50" oninput="document.getElementById('valUmbralOff').textContent = this.value + '%'">
                 </div>
-
-                <button class="btn-save" onclick="guardarUmbrales()">GUARDAR Y APLICAR</button>
+                <button class="btn-save" onclick="guardarUmbral()">GUARDAR Y APLICAR</button>
             </div>
         </section>
 
+        <!-- SECCIÓN 4: GRÁFICO -->
         <section class="card col-chart">
             <div class="card-title">Tendencia de Humedad en Tiempo Real</div>
-            <div class="chart-box">
-                <canvas id="humidityChart"></canvas>
-            </div>
-        </section>
-
-        <section class="card col-logs">
-            <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Bitacora de Eventos</span>
-                <button onclick="document.getElementById('logBox').innerHTML=''" style="background:#e2e8f0; color:#475569; padding:2px 8px; font-size:0.7rem; border:none; border-radius:4px; cursor:pointer;">Limpiar</button>
-            </div>
-            <div id="logBox" class="log-box"></div>
+            <div class="chart-box"><canvas id="humidityChart"></canvas></div>
         </section>
     </main>
 </div>
