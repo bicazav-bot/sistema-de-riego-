@@ -1,24 +1,22 @@
 function abrirModalQR() {
     const urlActual = window.location.href;
     document.getElementById("urlActual").textContent = urlActual;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(urlActual)}`;
-    document.getElementById("qrImage").src = qrUrl;
+    document.getElementById("qrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(urlActual)}`;
     document.getElementById("qrModal").style.display = "flex";
 }
-
 function cerrarModalQRDirecto() { document.getElementById("qrModal").style.display = "none"; }
 function cerrarModalQR(event) { if (event.target.id === "qrModal") document.getElementById("qrModal").style.display = "none"; }
 
 const brokerHost = "broker.hivemq.com";
-const brokerPort = 8884; // Puerto seguro WSS obligatorio para la web
+const brokerPort = 8884;
 const brokerPath = "/mqtt";
-const clientId   = "AgroClientWeb-" + Math.random().toString(16).substring(2, 8);
+const clientId   = "AgroWeb-" + Math.random().toString(16).substring(2, 8);
 
 const topicSoil      = "esp32/riego/suelo";
 const topicPump      = "esp32/riego/bomba";
 const topicStatus    = "esp32/riego/status";
-const topicUmbralOn  = "esp32/riego/umbral_on";
 const topicUmbralOff = "esp32/riego/umbral_off";
+const topicModo      = "esp32/riego/modo";
 
 let client = new Paho.MQTT.Client(brokerHost, Number(brokerPort), brokerPath, clientId);
 
@@ -28,19 +26,12 @@ const humidityChart = new Chart(ctx, {
     data: {
         labels: [],
         datasets: [{
-            label: 'Humedad (%)',
-            data: [],
-            borderColor: '#059669',
-            backgroundColor: 'rgba(5, 150, 105, 0.1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true,
-            pointRadius: 2
+            label: 'Humedad (%)', data: [], borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.1)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 2
         }]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         scales: {
             y: { min: 0, max: 100, grid: { color: '#f1f5f9' }, ticks: { color: '#64748b' } },
             x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 6 } }
@@ -49,69 +40,64 @@ const humidityChart = new Chart(ctx, {
     }
 });
 
-function log(texto) {
-    const box = document.getElementById("logBox");
-    if (!box) return;
-    box.innerHTML += `[${new Date().toLocaleTimeString()}] ${texto}<br>`;
-    box.scrollTop = box.scrollHeight;
-}
-
-function setConexion(status) {
+function setConexionESP32(estadoOnline) {
     const dot = document.getElementById("statusDot");
     const text = document.getElementById("statusText");
     if(!dot || !text) return;
-    if(status) {
-        dot.classList.add("online");
-        text.textContent = "CONECTADO";
+
+    if(estadoOnline) {
+        dot.classList.add("online"); 
+        text.textContent = "CONECTADO"; 
     } else {
-        dot.classList.remove("online");
-        text.textContent = "DESCONECTADO";
+        dot.classList.remove("online"); 
+        text.textContent = "DESCONECTADO"; 
     }
 }
 
-function actualizarInterfazBomba(estado) {
+function actualizarInterfazRelé(textoEstado) {
     let box = document.getElementById("pumpBox");
     let text = document.getElementById("pumpStateText");
     if (!box || !text) return;
 
-    if (estado === "ON") {
-        box.classList.add("active");
-        text.textContent = "BOMBA ACTIVA";
-    } else if (estado === "OFF") {
-        box.classList.remove("active");
-        text.textContent = "BOMBA INACTIVA";
-    } else if (estado === "AUTO") {
-        box.classList.remove("active");
-        text.textContent = "MODO AUTOMATICO";
+    text.textContent = textoEstado;
+
+    if (textoEstado.includes("ENCENDIDO") || textoEstado.includes("FORZADO")) {
+        if (textoEstado.includes("APAGADO")) {
+            box.className = "pump-box inactive";
+        } else if (textoEstado.includes("FORZADO")) {
+            box.className = "pump-box warning"; 
+        } else {
+            box.className = "pump-box active";
+        }
+    } else {
+        box.className = "pump-box inactive";
     }
 }
 
-client.onConnectionLost = () => { setConexion(false); setTimeout(conectar, 5000); };
+client.onConnectionLost = (responseObject) => {
+    setConexionESP32(false);
+    setTimeout(conectar, 5000);
+};
 
 client.onMessageArrived = (msg) => {
-    setConexion(true);
     const top = msg.destinationName;
     const val = msg.payloadString;
 
-    if (top === topicSoil) {
+    if (top === topicStatus) {
+        setConexionESP32(val === "ONLINE");
+    }
+    else if (top === topicSoil) {
         let hum = parseInt(val);
         document.getElementById("humedadVal").textContent = hum;
         document.getElementById("gaugeBar").style.transform = `rotate(${((hum / 100) * 180) - 180}deg)`;
 
         let estadoTxt = document.getElementById("estadoSueloTxt");
-        let condTxt = document.getElementById("conductividadTxt");
-        if (hum < 30) {
-            estadoTxt.textContent = "Seco (Requiere Riego)";
+        if (hum <= 30) {
+            estadoTxt.textContent = "Suelo Seco";
             estadoTxt.style.color = "var(--danger)";
-            condTxt.textContent = "Resistencia Alta";
-        } else if (hum <= 70) {
-            estadoTxt.textContent = "Humedad Optima";
-            estadoTxt.style.color = "var(--primary)";
-            condTxt.textContent = "Estable";
         } else {
-            estadoTxt.textContent = "Saturado / Agua";
-            estadoTxt.style.color = "var(--secondary)";
-            condTxt.textContent = "Conductiva";
+            estadoTxt.textContent = "Humedad Adecuada";
+            estadoTxt.style.color = "var(--primary)";
         }
 
         let hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -124,62 +110,54 @@ client.onMessageArrived = (msg) => {
         humidityChart.update('none');
     }
     else if (top === topicPump) {
-        actualizarInterfazBomba(val);
-        log(`Estado bomba recibido: ${val}`);
-    }
-    else if (top === topicStatus) {
-        setConexion(val === "ONLINE");
+        actualizarInterfazRelé(val);
     }
 };
 
 function conectar() {
     client.connect({
-        useSSL: true, // Obligatorio para puerto 8884 en navegadores modernos (HTTPS)
+        useSSL: true,
         onSuccess: () => {
             client.subscribe(topicSoil);
             client.subscribe(topicPump);
             client.subscribe(topicStatus);
-            log("Conectado de forma segura al broker MQTT.");
         },
         onFailure: (err) => { 
-            setConexion(false); 
-            log("Fallo de conexion: " + JSON.stringify(err));
+            setConexionESP32(false); 
             setTimeout(conectar, 5000); 
         }
     });
 }
 
-function enviarComando(cmd) {
-    if (!client.isConnected()) { alert("Sin conexion MQTT."); return; }
-    client.send(new Paho.MQTT.Message(cmd), topicPump);
-    actualizarInterfazBomba(cmd);
-    log(`Comando enviado: ${cmd}`);
-}
-
-function guardarUmbrales() {
-    if (!client.isConnected()) { alert("Sin conexion MQTT."); return; }
-    
+function guardarUmbral() {
     let aviso = document.getElementById("statusCalibracion");
-    let umbralOn = document.getElementById("rangeOn").value;
     let umbralOff = document.getElementById("rangeOff").value;
 
     aviso.textContent = "enviando...";
     aviso.className = "status-calib enviando";
 
-    client.send(new Paho.MQTT.Message(umbralOn), topicUmbralOn);
-    client.send(new Paho.MQTT.Message(umbralOff), topicUmbralOff);
+    if (client && client.isConnected()) {
+        let msgOff = new Paho.MQTT.Message(String(umbralOff));
+        msgOff.destinationName = topicUmbralOff;
+        client.send(msgOff);
+    }
 
     setTimeout(() => {
         aviso.textContent = "actualizado";
         aviso.className = "status-calib actualizado";
-        log(`Umbrales actualizados -> Encender: <${umbralOn}% | Apagar: >=${umbralOff}%`);
-
-        setTimeout(() => {
-            aviso.className = "status-calib";
-            aviso.textContent = "";
-        }, 3000);
-
+        setTimeout(() => { aviso.className = "status-calib"; aviso.textContent = ""; }, 3000);
     }, 800);
+}
+
+function enviarModo(modo) {
+    if (client && client.isConnected()) {
+        let mensajeModo = new Paho.MQTT.Message(modo);
+        mensajeModo.destinationName = topicModo;
+        client.send(mensajeModo);
+    } else {
+        alert("No hay conexión con el servidor MQTT");
+        conectar();
+    }
 }
 
 conectar();
