@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroIoT Pro | Estación de Riego</title>
+    <title>AgroIoT Pro | Estacion de Riego</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="estilo.css">
@@ -14,12 +14,12 @@
     <header>
         <div class="header-left">
             <div class="brand">
-                <h1> AgroIoT Riego Pro</h1>
-                <p>Monitoreo Agronómico y Actuador ESP32</p>
+                <h1>AgroIoT Riego Pro</h1>
+                <p>Monitoreo Agronomico y Actuador ESP32</p>
             </div>
         </div>
         <div class="header-right">
-            <button class="btn-qr" onclick="abrirModalQR()"> Ver QR</button>
+            <button class="btn-qr" onclick="abrirModalQR()">Ver QR</button>
             <div class="connection-badge">
                 <span id="statusDot" class="dot"></span>
                 <span id="statusText">DESCONECTADO</span>
@@ -29,10 +29,10 @@
 
     <div id="qrModal" class="modal-overlay" onclick="cerrarModalQR(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
-            <h3>Código QR de la Web</h3>
-            <p>Escanea este código con tu celular para abrir el panel:</p>
+            <h3>Codigo QR de la Web</h3>
+            <p>Escanea este codigo con tu celular para abrir el panel:</p>
             <div id="qrContainer">
-                <img id="qrImage" src="" alt="Código QR de la página">
+                <img id="qrImage" src="" alt="Codigo QR de la pagina">
             </div>
             <p id="urlActual" style="font-weight: 600; color: var(--text-main); margin-top: 5px;"></p>
             <button class="btn-close-modal" onclick="cerrarModalQRDirecto()">Cerrar</button>
@@ -63,19 +63,19 @@
         </section>
 
         <section class="card col-pump">
-            <div class="card-title">Actuador Hidráulico</div>
+            <div class="card-title">Actuador Hidraulico</div>
             <div id="pumpBox" class="pump-box">
                 <div id="pumpStateText" class="pump-title">BOMBA INACTIVA</div>
             </div>
             <div class="btn-grid">
                 <button class="btn-on" onclick="enviarComando('ON')">ENCENDER</button>
                 <button class="btn-off" onclick="enviarComando('OFF')">APAGAR</button>
-                <button class="btn-auto" onclick="enviarComando('AUTO')">MODO AUTOMÁTICO</button>
+                <button class="btn-auto" onclick="enviarComando('AUTO')">MODO AUTOMATICO</button>
             </div>
         </section>
 
         <section class="card col-soil">
-            <div class="card-title">Calibración de Umbrales</div>
+            <div class="card-title">Calibracion de Umbrales</div>
             <div id="statusCalibracion" class="status-calib"></div>
             <div class="calibration-group">
                 <div class="cal-item">
@@ -88,7 +88,7 @@
 
                 <div class="cal-item">
                     <div class="cal-header">
-                        <span>Apagar Bomba (Húmedo):</span>
+                        <span>Apagar Bomba (Humedo):</span>
                         <strong id="valUmbralOff" style="color:var(--primary)">50%</strong>
                     </div>
                     <input type="range" id="rangeOff" min="40" max="90" value="50" oninput="document.getElementById('valUmbralOff').textContent = this.value + '%'">
@@ -107,7 +107,7 @@
 
         <section class="card col-logs">
             <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Bitácora de Eventos</span>
+                <span>Bitacora de Eventos</span>
                 <button onclick="document.getElementById('logBox').innerHTML=''" style="background:#e2e8f0; color:#475569; padding:2px 8px; font-size:0.7rem; border:none; border-radius:4px; cursor:pointer;">Limpiar</button>
             </div>
             <div id="logBox" class="log-box"></div>
