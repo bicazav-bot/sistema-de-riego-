@@ -78,7 +78,7 @@ client.onMessageArrived = (msg) => {
     if (top === topicSoil) {
         let hum = parseInt(val);
         document.getElementById("humedadVal").textContent = hum;
-        document.getElementById("gaugeBar").style.transform = `rotate(${(hum / 100) * 180 - 90}deg)`;
+        document.getElementById("gaugeBar").style.transform = `rotate(${((hum / 100) * 180) - 180}deg)`;
 
         let estadoTxt = document.getElementById("estadoSueloTxt");
         let condTxt = document.getElementById("conductividadTxt");
