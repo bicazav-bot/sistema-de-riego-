@@ -10,9 +10,9 @@ function cerrarModalQRDirecto() { document.getElementById("qrModal").style.displ
 function cerrarModalQR(event) { if (event.target.id === "qrModal") document.getElementById("qrModal").style.display = "none"; }
 
 const brokerHost = "broker.hivemq.com";
-const brokerPort = 8884;
+const brokerPort = 8000;
 const brokerPath = "/mqtt";
-const clientId   = "AgroClientHTTPS-" + Math.random().toString(16).substring(2, 8);
+const clientId   = "AgroClientWeb-" + Math.random().toString(16).substring(2, 8);
 
 const topicSoil      = "esp32/riego/suelo";
 const topicPump      = "esp32/riego/bomba";
@@ -62,7 +62,7 @@ function setConexion(status) {
     if(!dot || !text) return;
     if(status) {
         dot.classList.add("online");
-        text.textContent = "CONECTADO SEGURO";
+        text.textContent = "CONECTADO";
     } else {
         dot.classList.remove("online");
         text.textContent = "DESCONECTADO";
@@ -76,13 +76,13 @@ function actualizarInterfazBomba(estado) {
 
     if (estado === "ON") {
         box.classList.add("active");
-        text.textContent = "💧 BOMBA ACTIVA";
+        text.textContent = "BOMBA ACTIVA";
     } else if (estado === "OFF") {
         box.classList.remove("active");
-        text.textContent = "⛔ BOMBA INACTIVA";
+        text.textContent = "BOMBA INACTIVA";
     } else if (estado === "AUTO") {
         box.classList.remove("active");
-        text.textContent = "⚙️ MODO AUTOMÁTICO";
+        text.textContent = "MODO AUTOMATICO";
     }
 }
 
@@ -105,7 +105,7 @@ client.onMessageArrived = (msg) => {
             estadoTxt.style.color = "var(--danger)";
             condTxt.textContent = "Resistencia Alta";
         } else if (hum <= 70) {
-            estadoTxt.textContent = "Humedad Óptima";
+            estadoTxt.textContent = "Humedad Optima";
             estadoTxt.style.color = "var(--primary)";
             condTxt.textContent = "Estable";
         } else {
@@ -134,39 +134,43 @@ client.onMessageArrived = (msg) => {
 
 function conectar() {
     client.connect({
-        useSSL: true,
+        useSSL: false,
         onSuccess: () => {
             client.subscribe(topicSoil);
             client.subscribe(topicPump);
             client.subscribe(topicStatus);
-            log("Conectado vía HTTPS/WSS.");
+            log("Conectado al broker MQTT.");
         },
-        onFailure: () => { setConexion(false); setTimeout(conectar, 5000); }
+        onFailure: (err) => { 
+            setConexion(false); 
+            log("Fallo de conexion: " + JSON.stringify(err));
+            setTimeout(conectar, 5000); 
+        }
     });
 }
 
 function enviarComando(cmd) {
-    if (!client.isConnected()) { alert("Sin conexión MQTT."); return; }
+    if (!client.isConnected()) { alert("Sin conexion MQTT."); return; }
     client.send(new Paho.MQTT.Message(cmd), topicPump);
     actualizarInterfazBomba(cmd);
     log(`Comando enviado: ${cmd}`);
 }
 
 function guardarUmbrales() {
-    if (!client.isConnected()) { alert("Sin conexión MQTT."); return; }
+    if (!client.isConnected()) { alert("Sin conexion MQTT."); return; }
     
     let aviso = document.getElementById("statusCalibracion");
     let umbralOn = document.getElementById("rangeOn").value;
     let umbralOff = document.getElementById("rangeOff").value;
 
-    aviso.textContent = "⏳ Enviando umbrales al ESP32...";
+    aviso.textContent = "enviando...";
     aviso.className = "status-calib enviando";
 
     client.send(new Paho.MQTT.Message(umbralOn), topicUmbralOn);
     client.send(new Paho.MQTT.Message(umbralOff), topicUmbralOff);
 
     setTimeout(() => {
-        aviso.textContent = "✔ ¡Actualizado correctamente!";
+        aviso.textContent = "actualizado";
         aviso.className = "status-calib actualizado";
         log(`Umbrales actualizados -> Encender: <${umbralOn}% | Apagar: >=${umbralOff}%`);
 
