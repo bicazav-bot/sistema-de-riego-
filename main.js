@@ -11,6 +11,7 @@ function cerrarModalQR(event) { if (event.target.id === "qrModal") document.getE
 
 const brokerHost = "broker.hivemq.com";
 const brokerPort = 8884;
+const brokerPath = "/mqtt"; // <-- RUTA OBLIGATORIA PARA WEBSOCKETS EN HIVEMQ
 const clientId   = "AgroClientHTTPS-" + Math.random().toString(16).substring(2, 8);
 
 const topicSoil      = "esp32/riego/suelo";
@@ -19,7 +20,8 @@ const topicStatus    = "esp32/riego/status";
 const topicUmbralOn  = "esp32/riego/umbral_on";
 const topicUmbralOff = "esp32/riego/umbral_off";
 
-let client = new Paho.MQTT.Client(brokerHost, Number(brokerPort), clientId);
+// Se incluye la ruta "/mqtt" en el cliente Paho
+let client = new Paho.MQTT.Client(brokerHost, Number(brokerPort), brokerPath, clientId);
 
 const ctx = document.getElementById('humidityChart').getContext('2d');
 const humidityChart = new Chart(ctx, {
@@ -132,18 +134,22 @@ function conectar() {
             client.subscribe(topicStatus);
             log("Conectado vía HTTPS/WSS.");
         },
-        onFailure: () => { setConexion(false); setTimeout(conectar, 5000); }
+        onFailure: (err) => { 
+            setConexion(false); 
+            log("Error de conexión: " + JSON.stringify(err));
+            setTimeout(conectar, 5000); 
+        }
     });
 }
 
 function enviarComando(cmd) {
-    if (!client.isConnected()) { alert("Sin conexión."); return; }
+    if (!client.isConnected()) { alert("Sin conexión MQTT."); return; }
     client.send(new Paho.MQTT.Message(cmd), topicPump);
     log(`Comando: ${cmd}`);
 }
 
 function guardarUmbrales() {
-    if (!client.isConnected()) { alert("Sin conexión."); return; }
+    if (!client.isConnected()) { alert("Sin conexión MQTT."); return; }
     let umbralOn = document.getElementById("rangeOn").value;
     let umbralOff = document.getElementById("rangeOff").value;
     client.send(new Paho.MQTT.Message(umbralOn), topicUmbralOn);
